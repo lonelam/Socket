@@ -19,6 +19,8 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #include <memory.h>
 #include <tchar.h>
 #include <cassert>
+#include <ctime>
 
 
 // TODO: 在此处引用程序需要的其他头文件
+

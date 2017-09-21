@@ -3,15 +3,8 @@
 //
 
 #include "stdafx.h"
-#include "server.h"
+#include "multiserver.h"
 
-#define MAX_LOADSTRING 100
-
-// 全局变量: 
-const WCHAR * tmp[3] = { L"alpha", L"beta", L"gamma" };
-HINSTANCE hInst;                                // 当前实例
-WCHAR szTitle[MAX_LOADSTRING];                  // 标题栏文本
-WCHAR szWindowClass[MAX_LOADSTRING];            // 主窗口类名
 
 // 此代码模块中包含的函数的前向声明: 
 ATOM                MyRegisterClass(HINSTANCE hInstance);
@@ -108,7 +101,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
    ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);
-  
+
    return TRUE;
 }
 
@@ -130,31 +123,42 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     {
 	case WM_CREATE:
 		{
-		    DiaMutex = CreateMutex(NULL, FALSE, NULL);
+		    logMutex = CreateMutex(NULL, FALSE, NULL);
 		    hList = CreateWindow(TEXT("ListBox"), TEXT(""),
 			LBS_NOTIFY | WS_CHILD | WS_OVERLAPPED | WS_VISIBLE | WS_VSCROLL,
 			10, 10, 200, 800, hWnd, (HMENU)IDC_MYLISTBOX, hInst, nullptr);
 			hFont = (HFONT)GetStockObject(DEFAULT_GUI_FONT);
 			HWND hAddButton = CreateWindow(TEXT("Button"), TEXT("添加一项"), 
 				BS_PUSHBUTTON | BS_TEXT | WS_CHILD | WS_OVERLAPPED | WS_VISIBLE,
-				400, 10, 90, 20, hWnd, (HMENU)IDM_ADDITEM, hInst, nullptr);
+				220, 10, 90, 20, hWnd, (HMENU)IDM_ADDITEM, hInst, nullptr);
 			HWND hDelButton = CreateWindow(TEXT("Button"), TEXT("删除选中项"),
 				BS_PUSHBUTTON | BS_TEXT | WS_CHILD | WS_OVERLAPPED | WS_VISIBLE,
-				400, 40, 90, 20, hWnd, (HMENU)IDM_DELITEM, hInst, nullptr);
+				220, 40, 90, 20, hWnd, (HMENU)IDM_DELITEM, hInst, nullptr);
+			hLogger = CreateWindow(TEXT("Static"), TEXT("日志"),
+				SS_LEFT | WS_CHILD | WS_OVERLAPPED | WS_VISIBLE,
+				330, 10, 200, 800, hWnd, (HMENU)IDM_LOGGER, hInst, nullptr);
+			SendMessage(hLogger, WM_SETTEXT, NULL, (LPARAM)L"初始");
 			SendMessage(hDelButton, WM_SETFONT, (WPARAM)hFont, MAKELPARAM(FALSE, 0));
 			SendMessage(hAddButton, WM_SETFONT, (WPARAM)hFont, MAKELPARAM(FALSE, 0));
 			SendMessage(hList, WM_SETFONT, (WPARAM) hFont, MAKELPARAM(FALSE, 0));
+			SendMessage(hLogger, WM_SETFONT, (WPARAM) hFont, MAKELPARAM(FALSE, 0));
 		}
 		break;
     case WM_COMMAND:
         {
             int wmId = LOWORD(wParam);
 			LRESULT res;
+			static WCHAR newLog[100];
             // 分析菜单选择: 
             switch (wmId)
             {
 			case IDM_ADDITEM:
-				SendMessage(hList, LB_ADDSTRING, NULL, (LPARAM)L"expamle");
+				{
+					SendMessage(hList, LB_ADDSTRING, NULL, (LPARAM)L"expamle");
+					time_t tmpTime = time(0);
+					wsprintf(newLog, L"%s\n", _wctime(&tmpTime));
+					writeLog(newLog);
+				}
 				break;
 			case IDM_DELITEM:
 				//关闭一个socket连接
@@ -185,7 +189,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hWnd, &ps);
             // TODO: 在此处添加使用 hdc 的任何绘图代码...
-			
             EndPaint(hWnd, &ps);
         }
         break;
