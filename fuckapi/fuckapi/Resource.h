@@ -1,23 +1,18 @@
 //{{NO_DEPENDENCIES}}
 // Microsoft Visual C++ generated include file.
-// Used by server.rc
+// Used by fuckapi.rc
 //
 
 #define IDS_APP_TITLE			103
 
-
-
 #define IDR_MAINFRAME			128
-#define IDD_SERVER_DIALOG	102
+#define IDD_FUCKAPI_DIALOG	102
 #define IDD_ABOUTBOX			103
 #define IDM_ABOUT				104
 #define IDM_EXIT				105
-#define IDM_ADDITEM             110
-#define IDM_DELITEM             111
-#define IDI_SERVER			107
+#define IDI_FUCKAPI			107
 #define IDI_SMALL				108
-#define IDC_SERVER			109
-#define IDC_MYLISTBOX        123
+#define IDC_FUCKAPI			109
 #define IDC_MYICON				2
 #ifndef IDC_STATIC
 #define IDC_STATIC				-1

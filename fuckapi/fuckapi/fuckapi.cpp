@@ -1,14 +1,12 @@
-
-// server.cpp : 定义应用程序的入口点。
+// fuckapi.cpp : 定义应用程序的入口点。
 //
 
 #include "stdafx.h"
-#include "server.h"
+#include "fuckapi.h"
 
 #define MAX_LOADSTRING 100
 
 // 全局变量: 
-const WCHAR * tmp[3] = { L"alpha", L"beta", L"gamma" };
 HINSTANCE hInst;                                // 当前实例
 WCHAR szTitle[MAX_LOADSTRING];                  // 标题栏文本
 WCHAR szWindowClass[MAX_LOADSTRING];            // 主窗口类名
@@ -18,7 +16,7 @@ ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
-INT_PTR CALLBACK    ListBoxProc(HWND, UINT, WPARAM, LPARAM);
+
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
                      _In_ LPWSTR    lpCmdLine,
@@ -31,15 +29,16 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     // 初始化全局字符串
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
-    LoadStringW(hInstance, IDC_SERVER, szWindowClass, MAX_LOADSTRING);
+    LoadStringW(hInstance, IDC_FUCKAPI, szWindowClass, MAX_LOADSTRING);
     MyRegisterClass(hInstance);
+
     // 执行应用程序初始化: 
     if (!InitInstance (hInstance, nCmdShow))
     {
         return FALSE;
     }
 
-    HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_SERVER));
+    HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_FUCKAPI));
 
     MSG msg;
 
@@ -74,10 +73,10 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
     wcex.cbClsExtra     = 0;
     wcex.cbWndExtra     = 0;
     wcex.hInstance      = hInstance;
-    wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_SERVER));
+    wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_FUCKAPI));
     wcex.hCursor        = LoadCursor(nullptr, IDC_ARROW);
     wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
-    wcex.lpszMenuName   = MAKEINTRESOURCEW(IDC_SERVER);
+    wcex.lpszMenuName   = MAKEINTRESOURCEW(IDC_FUCKAPI);
     wcex.lpszClassName  = szWindowClass;
     wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
 
@@ -100,7 +99,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
    HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
       CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
-   
+
    if (!hWnd)
    {
       return FALSE;
@@ -108,7 +107,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
    ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);
-  
+
    return TRUE;
 }
 
@@ -124,51 +123,27 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	static HFONT hFont;
-	static HWND hList;
     switch (message)
     {
 	case WM_CREATE:
-		{
-		    DiaMutex = CreateMutex(NULL, FALSE, NULL);
-		    hList = CreateWindow(TEXT("ListBox"), TEXT(""),
-			LBS_NOTIFY | WS_CHILD | WS_OVERLAPPED | WS_VISIBLE | WS_VSCROLL,
-			10, 10, 200, 800, hWnd, (HMENU)IDC_MYLISTBOX, hInst, nullptr);
-			hFont = (HFONT)GetStockObject(DEFAULT_GUI_FONT);
-			HWND hAddButton = CreateWindow(TEXT("Button"), TEXT("添加一项"), 
-				BS_PUSHBUTTON | BS_TEXT | WS_CHILD | WS_OVERLAPPED | WS_VISIBLE,
-				400, 10, 90, 20, hWnd, (HMENU)IDM_ADDITEM, hInst, nullptr);
-			HWND hDelButton = CreateWindow(TEXT("Button"), TEXT("删除选中项"),
-				BS_PUSHBUTTON | BS_TEXT | WS_CHILD | WS_OVERLAPPED | WS_VISIBLE,
-				400, 40, 90, 20, hWnd, (HMENU)IDM_DELITEM, hInst, nullptr);
-			SendMessage(hDelButton, WM_SETFONT, (WPARAM)hFont, MAKELPARAM(FALSE, 0));
-			SendMessage(hAddButton, WM_SETFONT, (WPARAM)hFont, MAKELPARAM(FALSE, 0));
-			SendMessage(hList, WM_SETFONT, (WPARAM) hFont, MAKELPARAM(FALSE, 0));
-		}
+		CreateWindow(TEXT("LISTBOX"),		//控件"类名称"
+			TEXT("按钮(&A)"),
+			WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
+			10,
+			10,
+			100,
+			100,
+			hWnd,
+			(HMENU)1000,			//控件ID
+			((LPCREATESTRUCT)lParam)->hInstance,	//实例句柄
+			NULL);
 		break;
     case WM_COMMAND:
         {
             int wmId = LOWORD(wParam);
-			LRESULT res;
             // 分析菜单选择: 
             switch (wmId)
             {
-			case IDM_ADDITEM:
-				SendMessage(hList, LB_ADDSTRING, NULL, (LPARAM)L"expamle");
-				break;
-			case IDM_DELITEM:
-				//关闭一个socket连接
-				res = SendMessage(hList, LB_GETCURSEL, NULL, NULL);
-				SendMessage(hList, LB_DELETESTRING, res, NULL);
-				SendMessage(hList, LB_SETCURSEL, res, NULL);
-				break;
-			case IDC_MYLISTBOX:
-				if (HIWORD(wParam) == LBN_DBLCLK)
-				{
-					int nIndex = SendMessage((HWND)lParam, LB_GETCURSEL, 0, 0);
-					InvalidateRect(hWnd, NULL, TRUE);
-				}
-				break;
             case IDM_ABOUT:
                 DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
                 break;
@@ -185,7 +160,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hWnd, &ps);
             // TODO: 在此处添加使用 hdc 的任何绘图代码...
-			
             EndPaint(hWnd, &ps);
         }
         break;
