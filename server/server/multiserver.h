@@ -23,11 +23,14 @@ extern HWND hLogger;
 //Receiver and Dispatcher Thread
 DWORD WINAPI Receiver(LPVOID pM);
 //Single Client Process Thread
+//Parameter: Id
 DWORD WINAPI singleClient(LPVOID pM);
 //Async writing function
 void inline writeLog(const WCHAR * s);
 //write this to static
 extern WCHAR logbuffer[30000];
+//handle of listbox
+extern HWND hList;
 extern std::vector<SOCKET> clientSet;
 
 

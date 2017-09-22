@@ -2,7 +2,6 @@
 // Microsoft Visual C++ 生成的包含文件。
 // 供 server.rc 使用
 //
-
 #define IDC_MYICON                      2
 #define IDD_SERVER_DIALOG               102
 #define IDS_APP_TITLE                   103
@@ -20,7 +19,13 @@
 #define IDM_ADDITEM                     110
 #define IDS_FAILAC                      110
 #define IDM_DELITEM                     111
+#define IDS_RECV                        111
 #define IDM_LOGGER                      112
+#define IDS_FAILSEND                    112
+#define IDS_SEND                        113
+#define IDS_CONCLOSE                    114
+#define IDS_FAILLIS                     115
+#define IDS_FAILBIND                    116
 #define IDC_MYLISTBOX                   123
 #define IDR_MAINFRAME                   128
 #define IDC_STATIC                      -1

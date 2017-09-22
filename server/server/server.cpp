@@ -118,11 +118,13 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	static HFONT hFont;
-	static HWND hList;
+	hList;
+	static DWORD TCPId;
     switch (message)
     {
 	case WM_CREATE:
 		{
+		    
 		    logMutex = CreateMutex(NULL, FALSE, NULL);
 		    hList = CreateWindow(TEXT("ListBox"), TEXT(""),
 			LBS_NOTIFY | WS_CHILD | WS_OVERLAPPED | WS_VISIBLE | WS_VSCROLL,
@@ -142,6 +144,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			SendMessage(hAddButton, WM_SETFONT, (WPARAM)hFont, MAKELPARAM(FALSE, 0));
 			SendMessage(hList, WM_SETFONT, (WPARAM) hFont, MAKELPARAM(FALSE, 0));
 			SendMessage(hLogger, WM_SETFONT, (WPARAM) hFont, MAKELPARAM(FALSE, 0));
+			CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)Receiver, (LPVOID)IPPROTO_TCP, NULL, &TCPId);
 		}
 		break;
     case WM_COMMAND:
