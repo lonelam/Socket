@@ -92,7 +92,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    hInst = hInstance; // 将实例句柄存储在全局变量中
 
    HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-      CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
+      0, 0, 850, 900, nullptr, nullptr, hInstance, nullptr);
    
    if (!hWnd)
    {
@@ -137,10 +137,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				BS_PUSHBUTTON | BS_TEXT | WS_CHILD | WS_OVERLAPPED | WS_VISIBLE,
 				220, 40, 90, 20, hWnd, (HMENU)IDM_DELITEM, hInst, nullptr);
 			hLogger = CreateWindow(TEXT("Static"), TEXT("日志"),
-				SS_LEFT | WS_CHILD | WS_OVERLAPPED | WS_VISIBLE,
+				SS_LEFT | WS_CHILD | WS_OVERLAPPED | WS_VISIBLE | WS_VSCROLL,
 				330, 10, 200, 800, hWnd, (HMENU)IDM_LOGGER, hInst, nullptr);
+			hDisp = CreateWindow(TEXT("Static"), TEXT("状态显示"),
+				SS_LEFT | WS_CHILD | WS_OVERLAPPED | WS_VISIBLE | WS_VSCROLL,
+				560, 10, 200, 800, hWnd, (HMENU)IDM_DISP, hInst, nullptr);
 			SendMessage(hLogger, WM_SETTEXT, NULL, (LPARAM)L"初始");
 			SendMessage(hDelButton, WM_SETFONT, (WPARAM)hFont, MAKELPARAM(FALSE, 0));
+			SendMessage(hDisp, WM_SETFONT, (WPARAM)hFont, MAKELPARAM(FALSE, 0));
 			SendMessage(hAddButton, WM_SETFONT, (WPARAM)hFont, MAKELPARAM(FALSE, 0));
 			SendMessage(hList, WM_SETFONT, (WPARAM) hFont, MAKELPARAM(FALSE, 0));
 			SendMessage(hLogger, WM_SETFONT, (WPARAM) hFont, MAKELPARAM(FALSE, 0));
@@ -173,7 +177,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				if (HIWORD(wParam) == LBN_DBLCLK)
 				{
 					int nIndex = SendMessage((HWND)lParam, LB_GETCURSEL, 0, 0);
-					InvalidateRect(hWnd, NULL, TRUE);
+					Display(nIndex);
 				}
 				break;
             case IDM_ABOUT:

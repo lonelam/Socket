@@ -3,11 +3,14 @@
 #include <WinSock2.h>
 #include <WS2tcpip.h>
 #include <vector>
+#include <string>
+#include <map>
 #pragma comment (lib, "Ws2_32.lib")
 
 #define DEFAULT_BUFLEN 512
 #define MAX_LOADSTRING 100
 #define DEFAULT_PORT "9527"
+
 
 //全局实例变量
 extern HINSTANCE hInst;                                // 当前实例
@@ -27,10 +30,18 @@ DWORD WINAPI Receiver(LPVOID pM);
 DWORD WINAPI singleClient(LPVOID pM);
 //Async writing function
 void inline writeLog(const WCHAR * s);
+//Displayer
+void Display(int nIndex);
+//write status
+void statAppend(int id, const WCHAR * s);
 //write this to static
 extern WCHAR logbuffer[30000];
 //handle of listbox
 extern HWND hList;
 extern std::vector<SOCKET> clientSet;
+extern std::map<int, std::wstring> status;
+extern std::map<std::wstring, int> idTable;
+extern std::map<int, std::wstring> addrTable;
+extern HWND hDisp;
 
 

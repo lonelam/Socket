@@ -13,11 +13,16 @@ WCHAR writeBuffer[MAX_LOADSTRING];
 HANDLE logMutex;
 //dialog handle
 HWND hLogger;
+HWND hDisp;
 HWND hList;
 //buffer for static textbox log
 WCHAR logbuffer[30000];
 
 std::vector<SOCKET> clientSet;
+std::map<int, std::wstring> status;
+std::map<std::wstring, int> idTable;
+std::map<int, std::wstring> addrTable;
+
 //parameter: (int) IPPROTO_UDP / IPPROTO_TCP
 DWORD WINAPI Receiver(LPVOID pM)
 {
@@ -85,7 +90,8 @@ DWORD WINAPI Receiver(LPVOID pM)
 	LoadString(hInst, IDS_SUCLISTEN, loadBuffer, MAX_LOADSTRING);
 	writeLog(loadBuffer);
 	sockaddr_in cAddr;
-	while (ClientSocket = accept(ListenSocket, (sockaddr *)&cAddr, NULL))
+	int cAddrLen = sizeof(cAddr);
+	while (ClientSocket = accept(ListenSocket, (sockaddr *)&cAddr, &cAddrLen))
 	{
 		
 		if (ClientSocket == INVALID_SOCKET)
@@ -99,7 +105,11 @@ DWORD WINAPI Receiver(LPVOID pM)
 			static WCHAR tmp[100];
  			wsprintf(tmp, L"[%d]%hs:%d", clientSet.size(), inet_ntoa(cAddr.sin_addr), cAddr.sin_port);
 			SendMessage(hList, LB_ADDSTRING, 0, (LPARAM)(tmp));
-			singleClient((LPVOID) clientSet.size());
+			status[clientSet.size()] = L"已建立对应项\n";
+			idTable[tmp] = clientSet.size();
+			addrTable[clientSet.size()] = tmp;
+			DWORD Tid;
+			CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)singleClient, (LPVOID)clientSet.size(), 0, &Tid);
 		}
 	}
 	return 0;
@@ -115,7 +125,6 @@ void inline writeLog(const WCHAR * s)
 DWORD WINAPI singleClient(LPVOID pM)
 {
 	int id = (int)pM;
-	
 	char recvbuf[DEFAULT_BUFLEN];
 	WCHAR recvtrans[DEFAULT_BUFLEN * 2];
 	const int recvbuflen = DEFAULT_BUFLEN;
@@ -128,6 +137,7 @@ DWORD WINAPI singleClient(LPVOID pM)
 			LoadString(hInst, IDS_RECV, loadBuffer, MAX_LOADSTRING);
 			wsprintf(writeBuffer, loadBuffer, iResult);
 			writeLog(writeBuffer);
+			statAppend(id, writeBuffer);
 			time_t tmpTime = time(0);
 			wsprintf(writeBuffer, L"%s [%d]:", _wctime(&tmpTime), id);
 			mbstowcs(recvtrans, recvbuf, iResult);
@@ -136,6 +146,7 @@ DWORD WINAPI singleClient(LPVOID pM)
 			lstrcat(writeBuffer, recvtrans);
 			lstrcat(writeBuffer, L"\n");
 			writeLog(writeBuffer);
+			statAppend(id, recvtrans);
 			iSendResult = send(clientSet[id - 1], recvbuf, iResult, 0);
 			if (iSendResult == SOCKET_ERROR)
 			{
@@ -148,10 +159,22 @@ DWORD WINAPI singleClient(LPVOID pM)
 			LoadString(hInst, IDS_SEND, loadBuffer, MAX_LOADSTRING);
 			wsprintf(writeBuffer, loadBuffer, iSendResult);
 			writeLog(writeBuffer);
+			statAppend(id, writeBuffer);
 		}
 	} while (iResult > 0);
 	iResult = shutdown(clientSet[id - 1], SD_SEND);
 	closesocket(clientSet[id-1]);
 	//WSACleanup();
 	return 0;
+}
+void Display(int nIndex)
+{
+	WCHAR addrBuffer[100];
+	SendMessage(hList, LB_GETTEXT, nIndex, (LPARAM)addrBuffer);
+	SendMessage(hDisp, WM_SETTEXT, NULL, (LPARAM)status[idTable[addrBuffer]].c_str());
+}
+void statAppend(int id, const WCHAR * s)
+{
+	status[id] += s;
+	status[id].append(L"\n");
 }
