@@ -30,7 +30,11 @@ DWORD WINAPI receiver(LPVOID pM)
 
 		iResult = recv(*(SOCKET *)pM, recvbuf, recvbuflen, 0);
 		if (iResult > 0)
-			printf("Bytes received: %d\n", iResult);
+		{
+			recvbuf[iResult] = '\0';
+			printf("Bytes received: %d \n:%s\n", iResult, recvbuf);
+			
+		}
 		else if (iResult == 0)
 			printf("Connection closed\n");
 		else

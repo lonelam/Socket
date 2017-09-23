@@ -9,8 +9,8 @@
 
 #define DEFAULT_BUFLEN 512
 #define MAX_LOADSTRING 100
-#define DEFAULT_PORT "9527"
-
+#define TCP_PORT "9527"
+#define UDP_PORT "10086"
 
 //全局实例变量
 extern HINSTANCE hInst;                                // 当前实例
@@ -25,9 +25,14 @@ extern HANDLE logMutex;
 extern HWND hLogger;
 //Receiver and Dispatcher Thread
 DWORD WINAPI Receiver(LPVOID pM);
+//UDP Receiver Thread
+DWORD WINAPI udpReceiver(LPVOID pM);
+
 //Single Client Process Thread
 //Parameter: Id
 DWORD WINAPI singleClient(LPVOID pM);
+//cast message to all exist connection
+int broadcast(const char *s, int len);
 //Async writing function
 void inline writeLog(const WCHAR * s);
 //Displayer
@@ -43,5 +48,3 @@ extern std::map<int, std::wstring> status;
 extern std::map<std::wstring, int> idTable;
 extern std::map<int, std::wstring> addrTable;
 extern HWND hDisp;
-
-

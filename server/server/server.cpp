@@ -120,6 +120,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	static HFONT hFont;
 	hList;
 	static DWORD TCPId;
+	static DWORD UDPId;
     switch (message)
     {
 	case WM_CREATE:
@@ -148,7 +149,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			SendMessage(hAddButton, WM_SETFONT, (WPARAM)hFont, MAKELPARAM(FALSE, 0));
 			SendMessage(hList, WM_SETFONT, (WPARAM) hFont, MAKELPARAM(FALSE, 0));
 			SendMessage(hLogger, WM_SETFONT, (WPARAM) hFont, MAKELPARAM(FALSE, 0));
-			CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)Receiver, (LPVOID)IPPROTO_TCP, NULL, &TCPId);
+			CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)Receiver, (LPVOID)"9527", NULL, &TCPId);
+			CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)udpReceiver, (LPVOID)"10086", NULL, &UDPId);
 		}
 		break;
     case WM_COMMAND:
