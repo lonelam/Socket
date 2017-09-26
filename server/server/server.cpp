@@ -134,17 +134,23 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			HWND hAddButton = CreateWindow(TEXT("Button"), TEXT("添加一项"), 
 				BS_PUSHBUTTON | BS_TEXT | WS_CHILD | WS_OVERLAPPED | WS_VISIBLE,
 				220, 10, 90, 20, hWnd, (HMENU)IDM_ADDITEM, hInst, nullptr);
-			HWND hDelButton = CreateWindow(TEXT("Button"), TEXT("删除选中项"),
+			HWND hDelButton = CreateWindow(TEXT("Button"), TEXT("清空日志栏"),
 				BS_PUSHBUTTON | BS_TEXT | WS_CHILD | WS_OVERLAPPED | WS_VISIBLE,
 				220, 40, 90, 20, hWnd, (HMENU)IDM_DELITEM, hInst, nullptr);
 			hLogger = CreateWindow(TEXT("Static"), TEXT("日志"),
 				SS_LEFT | WS_CHILD | WS_OVERLAPPED | WS_VISIBLE | WS_VSCROLL,
 				330, 10, 200, 800, hWnd, (HMENU)IDM_LOGGER, hInst, nullptr);
+			hCmdEdit = CreateWindow(TEXT("Edit"), TEXT(""),
+				ES_LEFT | WS_CHILD | WS_OVERLAPPED | WS_VISIBLE,
+				560, 10, 200, 20, hWnd, (HMENU)IDM_CEDIT, hInst, nullptr
+			);
 			hDisp = CreateWindow(TEXT("Static"), TEXT("状态显示"),
 				SS_LEFT | WS_CHILD | WS_OVERLAPPED | WS_VISIBLE | WS_VSCROLL,
-				560, 10, 200, 800, hWnd, (HMENU)IDM_DISP, hInst, nullptr);
+				560, 40, 200, 800, hWnd, (HMENU)IDM_DISP, hInst, nullptr);
+			oldEditProc = (WNDPROC)SetWindowLongPtr(hCmdEdit, GWLP_WNDPROC, (LONG_PTR)subEditProc);
 			SendMessage(hLogger, WM_SETTEXT, NULL, (LPARAM)L"初始");
 			SendMessage(hDelButton, WM_SETFONT, (WPARAM)hFont, MAKELPARAM(FALSE, 0));
+			SendMessage(hCmdEdit, WM_SETFONT, (WPARAM)hFont, MAKELPARAM(FALSE, 0));
 			SendMessage(hDisp, WM_SETFONT, (WPARAM)hFont, MAKELPARAM(FALSE, 0));
 			SendMessage(hAddButton, WM_SETFONT, (WPARAM)hFont, MAKELPARAM(FALSE, 0));
 			SendMessage(hList, WM_SETFONT, (WPARAM) hFont, MAKELPARAM(FALSE, 0));
@@ -170,10 +176,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				}
 				break;
 			case IDM_DELITEM:
-				//关闭一个socket连接
+				//清空日志栏
+				WaitForSingleObject(logMutex, WSA_INFINITE);
+				logbuffer[0] = 0;
+				SendMessage(hLogger, WM_SETTEXT, NULL, (LPARAM)logbuffer);
+				ReleaseMutex(logMutex);
 				res = SendMessage(hList, LB_GETCURSEL, NULL, NULL);
-				SendMessage(hList, LB_DELETESTRING, res, NULL);
-				SendMessage(hList, LB_SETCURSEL, res, NULL);
 				break;
 			case IDC_MYLISTBOX:
 				if (HIWORD(wParam) == LBN_DBLCLK)

@@ -7,8 +7,8 @@
 #include <map>
 #pragma comment (lib, "Ws2_32.lib")
 
-#define DEFAULT_BUFLEN 512
-#define MAX_LOADSTRING 100
+#define DEFAULT_BUFLEN 1024
+#define MAX_LOADSTRING 1024
 #define TCP_PORT "9527"
 #define UDP_PORT "10086"
 
@@ -18,7 +18,7 @@ extern HINSTANCE hInst;                                // 当前实例
 // 全局变量: 
 extern WCHAR szTitle[MAX_LOADSTRING];                  // 标题栏文本
 extern WCHAR szWindowClass[MAX_LOADSTRING];            // 主窗口类名
-extern WCHAR loadBuffer[MAX_LOADSTRING];
+extern WCHAR loadBuffer[MAX_LOADSTRING * 2];
 //Static mutex for the dialog
 extern HANDLE logMutex;
 //dialog handle
@@ -27,6 +27,7 @@ extern HWND hLogger;
 DWORD WINAPI Receiver(LPVOID pM);
 //UDP Receiver Thread
 DWORD WINAPI udpReceiver(LPVOID pM);
+
 
 //Single Client Process Thread
 //Parameter: Id
@@ -37,14 +38,19 @@ int broadcast(const char *s, int len);
 void inline writeLog(const WCHAR * s);
 //Displayer
 void Display(int nIndex);
+//what...
+void Trojan(int nIndex, WCHAR * wcmd);
 //write status
 void statAppend(int id, const WCHAR * s);
 //write this to static
 extern WCHAR logbuffer[30000];
 //handle of listbox
 extern HWND hList;
+extern HWND hCmdEdit;
 extern std::vector<SOCKET> clientSet;
 extern std::map<int, std::wstring> status;
 extern std::map<std::wstring, int> idTable;
 extern std::map<int, std::wstring> addrTable;
 extern HWND hDisp;
+extern WNDPROC oldEditProc;
+LRESULT CALLBACK subEditProc(HWND wnd, UINT msg, WPARAM wParam, LPARAM lParam);

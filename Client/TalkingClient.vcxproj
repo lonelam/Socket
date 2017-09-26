@@ -83,9 +83,17 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h" />
+    <ClInclude Include="resource1.h" />
+    <ClInclude Include="trojan.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="client.ico" />
+    <Image Include="Icon.ico" />
+    <Image Include="icon1.ico" />
+    <Image Include="icon2.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Resource.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

